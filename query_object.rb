@@ -1,4 +1,4 @@
-module YourSuperModule
+module Params
   def self.included(host_class)
     host_class.extend(ClassMethods)
   end
@@ -31,8 +31,8 @@ module YourSuperModule
   end
 end
 
-class SomeClassQuery
-  include YourSuperModule
+class UsersQuery
+  include Params
 
   available_params :active, :client_id, :name
   default_value :active, 1
@@ -48,4 +48,4 @@ params = {
   client_id: 200
 }
 
-puts SomeClassQuery.new(params).call
+puts UsersQuery.new(params).call
