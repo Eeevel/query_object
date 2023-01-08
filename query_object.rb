@@ -1,6 +1,6 @@
-module ParamsMethods
-  def self.included(host_class)
-    host_class.extend(ClassMethods)
+module Query
+  def self.included(base)
+    base.extend(ClassMethods)
   end
 
   def initialize(params)
@@ -22,34 +22,33 @@ module ParamsMethods
     self.class.available_params
   end
 
-  def default_value
-    self.class.default_value
+  def default_values
+    self.class.default_values
   end
 
   def value_for(parameter)
-    params[parameter] || default_value[parameter]
+    params[parameter] || default_values[parameter]
   end
 
   module ClassMethods
     def available_params(*available_params)
-      @available_params = available_params unless defined? @available_params
-      @available_params
+      @available_params ||= available_params
     end
 
-    def default_value(*default_params)
-      @default_value = {} unless defined? @default_value
-      @default_value[default_params.first] = default_params.last unless default_params.empty?
-      @default_value
+    def default_values(*default_params)
+      @default_values ||= {}
+      @default_values[default_params.first] = default_params.last unless default_params.empty?
+      @default_values
     end
   end
 end
 
 class UsersQuery
-  include ParamsMethods
+  include Query
 
   available_params :active, :client_id, :name
-  default_value :active, 1
-  default_value :name, 'test'
+  default_values :active, 1
+  default_values :name, 'test'
 
   def call
     query
