@@ -1,45 +1,57 @@
-module YourSuperModule
-  def self.included(host_class)
-    host_class.extend(ClassMethods)
+module Query
+  def self.included(base)
+    base.extend(ClassMethods)
   end
 
   def initialize(params)
-    params.each do |k, v|
-      next eval("set_#{k}('#{v}')") if v.instance_of?(String)
-      eval("set_#{k}(#{v})")
-    end
+    @params = params
+  end
+
+  def query
+    params_for_query = available_params.map do |p|
+      "#{p}: #{value_for(p)}" if value_for(p)
+    end.compact
+    "Select with: #{params_for_query}"
+  end
+
+  def params
+    @params
+  end
+
+  def available_params
+    self.class.available_params
+  end
+
+  def default_values
+    self.class.default_values
+  end
+
+  def value_for(parameter)
+    params[parameter] || default_values[parameter]
   end
 
   module ClassMethods
-    def available_params(*params)
-      params.each do |parameter|
-        define_method(parameter) do
-          instance_variable_get("@#{parameter}") || (eval("default_#{parameter}") if respond_to?("default_#{parameter}"))
-        end
-
-        define_method("set_#{parameter}") do |value|
-          instance_variable_set("@#{parameter}", value)
-        end
-      end
+    def available_params(*available_params)
+      @available_params ||= available_params
     end
 
-    def default_value(*params)
-      define_method("default_#{params.first}") do
-        params.last
-      end
+    def default_values(*default_params)
+      @default_values ||= {}
+      @default_values[default_params.first] = default_params.last unless default_params.empty?
+      @default_values
     end
   end
 end
 
-class SomeClassQuery
-  include YourSuperModule
+class UsersQuery
+  include Query
 
   available_params :active, :client_id, :name
-  default_value :active, 1
-  default_value :name, 'test'
+  default_values :active, 1
+  default_values :name, 'test'
 
   def call
-    "Select with active: #{active}, client_id: #{client_id}, name: #{name}"
+    query
   end
 end
 
@@ -48,4 +60,4 @@ params = {
   client_id: 200
 }
 
-puts SomeClassQuery.new(params).call
+puts UsersQuery.new(params).call
